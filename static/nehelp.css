@@ -124,20 +124,16 @@ dialog::backdrop{background:rgba(5,12,9,.55)}
 .pub{background:var(--sf);border:1px solid var(--bd);border-radius:16px;overflow:hidden;margin:18px 0}
 .pub .ph{height:120px;background:var(--sf2);display:grid;place-items:center;color:var(--mu)}
 .pub .bd{padding:16px 18px}
-.codes{letter-spacing:.5em;font-size:22px;text-align:center;font-weight:600}
-.scrim{display:none}
 @media (max-width:1100px){.shell{grid-template-columns:240px minmax(0,1fr)}.sum{grid-column:2;padding:0 28px 64px}.main{padding-bottom:28px}}
 @media (max-width:760px){
 .hero{grid-template-columns:1fr}.steps{max-width:380px}
 .shell{grid-template-columns:1fr}.sum{grid-column:1;padding:0 16px 64px}.main{padding:20px 16px 28px}
-.side{position:fixed;z-index:40;top:calc(env(safe-area-inset-top,0px) + 60px);bottom:0;left:0;width:272px;transform:translateX(-102%);transition:transform .2s}
-.side.open{transform:none}
-.scrim.open{display:block;position:fixed;inset:0;z-index:35;background:rgba(5,12,9,.45)}
+.side{display:none}
 .cards.list .card{flex-direction:column;align-items:stretch}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
-/* Map section (js/map.js) */
+/* Map section (map.js) */
 .bizmap{height:60vh;min-height:360px;border-radius:16px;border:1px solid var(--sf2);overflow:hidden}
 .maplegend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px;font-size:14px}
 .maplegend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px}
@@ -187,7 +183,7 @@ a.brand{text-decoration:none}
 .actlist small{display:block;color:var(--mu);font-size:13px}
 .dotm{width:10px;height:10px;border-radius:50%;background:var(--pr);margin-top:7px;flex:none}
 .mrow{display:flex;align-items:center;gap:12px;margin:8px 0}
-.mrow span{min-width:90px;font-size:14px}
+.mrow span{min-width:110px;font-size:14px}
 .meter{flex:1;height:10px;background:var(--sf2);border-radius:5px;overflow:hidden}
 .meter i{display:block;height:100%;background:var(--pr);border-radius:5px}
 details{border-top:1px solid var(--bd);padding:10px 0}
@@ -205,3 +201,53 @@ details p{margin-top:6px;color:var(--mu);font-size:15px}
 a.btn,a.tbtn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
 a.tbtn{color:var(--tx)}
 a.btn.out{color:var(--pr)}
+
+/* Service colours: each service has its own colour (set as --svc by svc() in state.js) */
+.pill.svc{background:color-mix(in srgb,var(--svc) 14%,transparent);color:color-mix(in srgb,var(--svc) 80%,var(--tx));font-weight:600}
+.chip .sdot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--svc);margin-right:8px;vertical-align:-1px}
+.chip[style*="--svc"][aria-pressed="true"]{border-color:var(--svc);background:color-mix(in srgb,var(--svc) 14%,var(--sf))}
+
+/* Message threads (messages.js) */
+.convo{margin-bottom:16px}
+.thread{display:flex;flex-direction:column;gap:8px}
+.msg{max-width:80%;padding:10px 14px;border-radius:14px;background:var(--sf2)}
+.msg.me{align-self:flex-end;background:var(--prs)}
+.msg small{display:block;color:var(--mu);font-size:12px;margin-bottom:2px}
+.msg p{margin:0}
+
+/* Let hero columns shrink on small screens so lists inside them wrap instead of overflowing */
+.hero>*{min-width:0}
+
+/* Map polish: quieter tiles so pins stand out, and controls and popups that match the site */
+.leaflet-container{font-family:inherit}
+.leaflet-tile-pane{filter:saturate(.3) contrast(.9) brightness(1.05)}
+.leaflet-container .leaflet-bar{border:1px solid var(--bd);border-radius:8px;box-shadow:0 1px 3px rgb(18 38 58/.16);overflow:hidden}
+.leaflet-container .leaflet-bar a{background:var(--sf);color:var(--tx);border-color:var(--bd);width:36px;height:36px;line-height:36px}
+.leaflet-container .leaflet-bar a:hover{background:var(--sf2)}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:var(--sf);color:var(--tx)}
+.leaflet-popup-content-wrapper{border-radius:12px;box-shadow:0 4px 16px rgb(18 38 58/.2)}
+.leaflet-popup-content{font:14px/1.45 "Plus Jakarta Sans",system-ui,sans-serif;margin:12px 14px}
+/* Dashboard switch used as links on pages outside the app (map.html, company.html) */
+.rolesw a{padding:7px 14px;border-radius:9px;font-weight:600;font-size:14px;color:var(--mu);text-decoration:none}
+.rolesw a:hover{color:var(--tx)}
+.rolesw a[aria-current="true"]{background:var(--pr);color:var(--on)}
+@media (max-width:560px){.rolesw a{padding:7px 10px}.top .tbtn:not(.topmap){padding:0 8px;font-size:13px}}
+
+/* Top-left dropdown (the same on every page) */
+.tl{position:relative}
+.navmenu{left:0;right:auto;top:50px;min-width:270px}
+.menu a{display:block;padding:10px 12px;border-radius:8px;color:var(--tx);text-decoration:none}
+.menu a:hover{background:var(--sf2)}
+.menu .mm-h{padding:10px 12px 2px;font-size:12px;font-weight:600;color:var(--mu)}
+.mm-role{border-top:1px solid var(--bd);margin-top:6px}
+body[data-page="index"] .mm-role{display:none}
+@media (max-width:760px){body[data-page="index"] .mm-role{display:block}}
+
+/* Companies on the map and in lists */
+.coPin i{display:block;width:16px;height:16px;border-radius:4px;background:#8CA0B3;border:2px solid #fff;box-shadow:0 1px 3px rgb(18 38 58/.35);margin:2px}
+.coPin.on i{background:#12263A}
+.maplegend i.sq{border-radius:3px}
+.pill.co{background:#12263A;color:#fff}
+
+/* Admin dashboard */
+.stat.big b{font-size:26px}

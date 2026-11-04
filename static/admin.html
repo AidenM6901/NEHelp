@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NEhelp · Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="nehelp.css">
+</head>
+<!-- Admin dashboard for the NEhelp team: what it looks like from the owners' side. Reads the same saved data as the app. -->
+<body data-page="admin">
+<header class="top">
+  <div class="tl"><button class="iconbtn" id="burger" aria-label="Open menu" aria-haspopup="true" aria-expanded="false"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button><div class="menu navmenu" id="navmenu" hidden></div></div>
+  <a class="brand" href="index.html#home" aria-label="NEhelp home" style="text-decoration:none"><svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--ink)"/><circle cx="12.5" cy="16" r="7" fill="#14B5AE"/><circle cx="19.5" cy="16" r="7" fill="#F2A541" opacity=".92"/></svg><span>NE<span class="hp">help</span></span></a>
+  <div class="right"><div class="rolesw" role="group" aria-label="Go to a dashboard"><a href="index.html#go-business"><span class="lg">Small business</span><span class="sm">Business</span></a><a href="index.html#go-company">Company</a></div><a class="tbtn topmap" href="map.html" aria-pressed="false">Map</a></div>
+</header>
+<main class="land" style="max-width:1100px">
+  <div class="bar"><h2>NEhelp team dashboard</h2><span class="pill">Demo data</span></div>
+  <p class="hint" style="margin-bottom:20px">What the people who run NEhelp see. The numbers come from the test data plus anything you do in this browser, so they change as you create, claim and sign up. Owners see real business names here, which companies don’t.</p>
+  <div class="status" id="kpis"></div>
+  <div class="infogrid" id="panels"></div>
+  <p class="hint" style="margin-top:28px">Only the NEhelp team would see this page. In this demo it has no login.</p>
+</main>
+
+<script src="state.js"></script>
+<script src="businesses.js"></script>
+<script>
+(function () {
+  var issues = S.issues, cos = companyList(), biz = window.BUSINESSES || [], DAY = 864e5;
+  function ms(s) { return Date.parse(s); }
+  function sum(list, f) { return list.reduce(function (a, x) { return a + f(x); }, 0); }
+  function money(n) { n = Math.round(n * 100) / 100; return "£" + n.toLocaleString("en-GB", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }); }
+  function when(t) { return new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short" }); }
+  function plural(n, one, many) { return n + " " + (n === 1 ? one : many); }
+  function bar(label, n, max, colour) {
+    return '<div class="mrow"><span>' + esc(label) + '</span><div class="meter"><i style="width:' + Math.round(n / Math.max(max, 1) * 100) + "%" + (colour ? ";background:" + colour : "") + '"></i></div><b>' + n + "</b></div>";
+  }
+  function card(title, body) { return '<section class="infocard"><h3>' + esc(title) + "</h3>" + body + "</section>"; }
+  function kpi(label, value) { return '<div class="stat big good"><small>' + esc(label) + "</small><b>" + esc(value) + "</b></div>"; }
+  function list(items, empty) {
+    return items.length ? '<ul class="actlist">' + items.map(function (x) { return '<li><span class="dotm"></span><div>' + esc(x[0]) + (x[1] ? "<small>" + esc(x[1]) + "</small>" : "") + "</div></li>"; }).join("") + "</ul>" : '<p class="hint">' + esc(empty) + "</p>";
+  }
+
+  // The newest date in the test data, so the "last 8 weeks" and "older than a week" views always make sense.
+  var anchor = Math.max.apply(null, issues.map(function (i) { return ms(i.created); })
+    .concat(biz.filter(function (b) { return b.since; }).map(function (b) { return ms(b.since); }))
+    .concat(cos.filter(function (c) { return c.since; }).map(function (c) { return ms(c.since); })));
+
+  var bizOn = biz.filter(isClaimed).length + (S.claimed && !S.business.bizId ? 1 : 0);
+  var coList = cos.filter(isClaimedCo);
+  var live = issues.filter(function (i) { return i.status === "inprogress" || i.status === "done"; });
+  var open = issues.filter(function (i) { return i.status === "open"; });
+  var mrr = sum(coList, function (c) { return c.plan === "founding" ? 39.5 : 79; });
+
+  document.getElementById("kpis").innerHTML =
+    kpi("Small businesses on NEhelp", bizOn + " of " + (biz.length + (S.claimed && !S.business.bizId ? 1 : 0))) +
+    kpi("Companies on NEhelp", coList.length + " of " + cos.length) +
+    kpi("Open requests", String(open.length)) +
+    kpi("Agreements signed", String(live.length)) +
+    kpi("Free hours given", sum(live.filter(function (i) { return !i.price; }), function (i) { return i.hours; }) + " hours") +
+    kpi("Agreed work", money(sum(live, function (i) { return i.price || 0; }))) +
+    kpi("Membership income a month", money(mrr)) +
+    kpi("Messages sent", String(S.messages.length));
+
+  // Requests by stage
+  var stages = [["open", "Looking for a company"], ["offered", "Offer waiting"], ["inprogress", "In progress"], ["done", "Done"], ["notneeded", "Not needed"]];
+  var counts = stages.map(function (s) { return issues.filter(function (i) { return i.status === s[0]; }).length; });
+  var stageHtml = stages.map(function (s, k) { return bar(s[1], counts[k], Math.max.apply(null, counts)); }).join("");
+
+  // Demand by service (requests that are still live or finished)
+  var svcCounts = CATS.map(function (c) { return issues.filter(function (i) { return i.cat === c && i.status !== "notneeded" && i.status !== "draft"; }).length; });
+  var svcHtml = CATS.map(function (c, k) { return bar(c, svcCounts[k], Math.max.apply(null, svcCounts), SVC[c]); }).join("");
+
+  // Where requests come from
+  var byArea = {};
+  issues.forEach(function (i) { var d = i.district || (i.biz === "me" ? (S.business.district || S.business.area) : "Other"); byArea[d] = (byArea[d] || 0) + 1; });
+  var areas = Object.keys(byArea).sort(function (a, b) { return byArea[b] - byArea[a]; });
+  var areaHtml = areas.map(function (a) { return bar(a, byArea[a], byArea[areas[0]]); }).join("");
+
+  // New sign-ups, week by week (businesses and companies, from the test data)
+  var dates = biz.filter(function (b) { return b.claimed && b.since; }).map(function (b) { return ms(b.since); })
+    .concat(coList.filter(function (c) { return c.since; }).map(function (c) { return ms(c.since); }));
+  var weeks = [];
+  for (var k = 7; k >= 0; k--) {
+    var start = anchor - (k * 7 + 6) * DAY;
+    weeks.push([when(start), dates.filter(function (d) { return d >= start && d < start + 7 * DAY; }).length]);
+  }
+  var weekMax = Math.max.apply(null, weeks.map(function (w) { return w[1]; }));
+  var weekHtml = weeks.map(function (w) { return bar("Week of " + w[0], w[1], weekMax); }).join("");
+
+  // Most active companies
+  var rows = coList.map(function (c) {
+    var key = c.id === S.company.compId ? "tyne" : c.id, mine = live.filter(function (i) { return i.company === key; });
+    return { name: c.name, jobs: mine.length, hours: sum(mine, function (i) { return i.hours; }), value: sum(mine, function (i) { return i.price || 0; }) };
+  }).filter(function (r) { return r.jobs; }).sort(function (a, b) { return b.jobs - a.jobs || b.hours - a.hours; }).slice(0, 6);
+  var coHtml = rows.length ? '<ul class="linklist">' + rows.map(function (r) {
+    return "<li><span><b>" + esc(r.name) + '</b><br><span class="meta">' + plural(r.jobs, "job", "jobs") + ", " + plural(r.hours, "hour", "hours") + ", " + money(r.value) + "</span></span></li>";
+  }).join("") + "</ul>" : '<p class="hint">No agreements yet.</p>';
+
+  // Needs attention
+  var attention = [];
+  open.filter(function (i) { return anchor - ms(i.created) >= 7 * DAY; }).sort(function (a, b) { return ms(a.created) - ms(b.created); }).forEach(function (i) {
+    attention.push([bizName(i) + " asked for help with “" + i.title + "” " + Math.round((anchor - ms(i.created)) / DAY) + " days ago and has no offers yet.", i.cat]);
+  });
+  var unread = S.messages.filter(function (m) { return m.from === "company" && !m.read; }).length;
+  if (unread) attention.push([plural(unread, "message to a business is", "messages to businesses are") + " still unread.", "Messages"]);
+  var noStaff = CATS.filter(function (c) { return !freeIn(c).length; });
+  if (noStaff.length) attention.push(["The demo company has no one free in " + noStaff.join(", ") + ".", "Capacity"]);
+
+  // Recent activity
+  var events = [];
+  issues.forEach(function (i) {
+    events.push([ms(i.created), bizName(i) + " asked for help with “" + i.title + "” (" + i.cat + ")."]);
+    if (i.signed) events.push([ms(i.signed), (COMP[i.company] || "A company") + " and " + bizName(i) + " signed an agreement for “" + i.title + "”."]);
+  });
+  events.sort(function (a, b) { return b[0] - a[0]; });
+  var feed = events.slice(0, 8).map(function (e) { return [e[1], when(e[0])]; });
+
+  // Membership
+  var founding = coList.filter(function (c) { return c.plan === "founding"; }).length, standard = coList.length - founding;
+  var memberHtml = '<div class="mrow"><span>Founding</span><div class="meter"><i style="width:' + Math.round(founding / Math.max(coList.length, 1) * 100) + '%"></i></div><b>' + founding + "</b></div>" +
+    '<div class="mrow"><span>Standard</span><div class="meter"><i style="width:' + Math.round(standard / Math.max(coList.length, 1) * 100) + '%"></i></div><b>' + standard + "</b></div>" +
+    '<p class="hint" style="margin-top:8px">Founding members pay £39.50 a month for the first 6 months, then £79. That adds up to ' + money(mrr) + " a month.</p>";
+
+  document.getElementById("panels").innerHTML =
+    card("Requests by stage", stageHtml) +
+    card("Demand by service", svcHtml) +
+    card("Where requests come from", areaHtml) +
+    card("New sign-ups by week", weekHtml) +
+    card("Most active companies", coHtml) +
+    card("Membership", memberHtml) +
+    card("Needs attention", list(attention.slice(0, 6), "Nothing needs attention right now.")) +
+    card("Recent activity", list(feed, "Nothing yet."));
+})();
+</script>
+</body>
+</html>
